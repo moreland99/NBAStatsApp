@@ -1,47 +1,44 @@
-// src/screens/PlayerProfileScreen.js
-
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { fetchPlayerStats } from '../services/nbaApiService';
 
 const PlayerProfileScreen = ({ route }) => {
   const { playerId, playerName } = route.params;
-  const [stats, setStats] = useState(null);
+  const [playerStats, setPlayerStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadPlayerData = async () => {
-      const playerStats = await fetchPlayerStats(playerId);
-      setStats(playerStats);
-
+    const getPlayerStats = async () => {
+      setLoading(true);
+      const stats = await fetchPlayerStats(playerId);
+      setPlayerStats(stats);
       setLoading(false);
     };
 
-    loadPlayerData();
+    getPlayerStats();
   }, [playerId]);
-
-  if (loading) {
-    return <ActivityIndicator style={styles.loading} size="large" color="#0000ff" />;
-  }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.name}>{playerName}</Text>
+      <Text style={styles.header}>{playerName}'s Career Stats</Text>
 
-      <Text style={styles.sectionHeader}>Current Season Statistics</Text>
-      {stats ? (
+      {loading ? (
+        <Text style={styles.loading}>Loading stats...</Text>
+      ) : playerStats && playerStats.length > 0 ? (
         <View style={styles.statsContainer}>
-          <Text style={styles.stats}>Points per Game: {stats.points || 'N/A'}</Text>
-          <Text style={styles.stats}>Assists per Game: {stats.assists || 'N/A'}</Text>
-          <Text style={styles.stats}>Rebounds per Game: {stats.rebounds || 'N/A'}</Text>
-          <Text style={styles.stats}>Field Goal %: {stats.fieldGoalPercentage ? `${stats.fieldGoalPercentage}%` : 'N/A'}</Text>
-          <Text style={styles.stats}>3-Point %: {stats.threePointPercentage ? `${stats.threePointPercentage}%` : 'N/A'}</Text>
-          <Text style={styles.stats}>Free Throw %: {stats.freeThrowPercentage ? `${stats.freeThrowPercentage}%` : 'N/A'}</Text>
-          <Text style={styles.stats}>Turnovers per Game: {stats.turnovers || 'N/A'}</Text>
-          <Text style={styles.stats}>Player Efficiency Rating: {stats.per || 'N/A'}</Text>
+          {playerStats.map((stat, index) => (
+            <View key={index} style={styles.statItem}>
+              <Text style={styles.statTitle}>{stat.statType}</Text>
+              <Text>Points: {stat.pointsPerGame || 'N/A'}</Text>
+              <Text>Assists: {stat.assistsPerGame || 'N/A'}</Text>
+              <Text>Rebounds: {stat.totalReboundsPerGame || 'N/A'}</Text>
+              <Text>Steals: {stat.stealsPerGame || 'N/A'}</Text>
+              {/* Add more stats as needed */}
+            </View>
+          ))}
         </View>
       ) : (
-        <Text style={styles.noStats}>Statistics not available.</Text>
+        <Text style={styles.noStats}>No career stats available.</Text>
       )}
     </View>
   );
@@ -50,35 +47,37 @@ const PlayerProfileScreen = ({ route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-    alignItems: 'center',
+    padding: 16,
   },
-  loading: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  name: {
+  header: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: 20,
   },
-  sectionHeader: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginTop: 20,
-    marginBottom: 10,
+  loading: {
+    fontSize: 16,
+    color: 'gray',
   },
   statsContainer: {
-    alignItems: 'center',
+    marginTop: 10,
   },
-  stats: {
-    fontSize: 16,
+  statItem: {
+    marginBottom: 10,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 5,
+  },
+  statTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
     marginBottom: 5,
   },
   noStats: {
     fontSize: 16,
-    color: 'gray',
-    marginTop: 10,
+    color: 'red',
+    textAlign: 'center',
+    marginTop: 20,
   },
 });
 
