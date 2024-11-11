@@ -38,10 +38,7 @@ export const searchPlayers = async (playerName) => {
 // Function to fetch player statistics for the current season
 export const fetchPlayerStats = async (playerId) => {
   try {
-    const url = `${BASKETBALL_HEAD_API_BASE_URL}/players/${playerId}/stats/Totals?seasonType=Regular`;
-    console.log(`Fetching career total stats for player ID: ${playerId} with URL: ${url}`);
-
-    const response = await fetch(url, {
+    const response = await fetch(`https://basketball-head.p.rapidapi.com/players/${playerId}/stats/Totals?seasonType=Regular`, {
       method: 'GET',
       headers: {
         'X-RapidAPI-Key': BASKETBALL_HEAD_API_KEY,
@@ -49,19 +46,17 @@ export const fetchPlayerStats = async (playerId) => {
       },
     });
 
-    console.log('Response Status:', response.status);
-
-    if (!response.ok) throw new Error(`Failed to fetch player stats, status: ${response.status}`);
+    if (!response.ok) {
+      throw new Error(`Error fetching stats, status: ${response.status}`);
+    }
 
     const data = await response.json();
-    console.log('Player Total Stats API Response:', data);
-
-    // Assuming the relevant data is in `data.body` based on previous API structure examples
-    const stats = data.body || [];
-    return stats;
+    console.log('Fetched Player Stats:', data);
+    return data;
   } catch (error) {
-    console.error('Error fetching player total stats:', error);
+    console.error('Error fetching player stats:', error);
     return null;
   }
 };
+
 
