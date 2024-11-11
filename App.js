@@ -1,20 +1,34 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
+import PlayerSearchScreen from './src/screens/PlayerSearchScreen';
+import PlayerProfileScreen from './src/screens/PlayerProfileScreen';
+import PlayerComparisonScreen from './src/screens/PlayerComparisonScreen';
+
+const Stack = createStackNavigator();
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
+    <NavigationContainer>
       <StatusBar style="auto" />
-    </View>
+      <Stack.Navigator initialRouteName="PlayerSearch">
+        <Stack.Screen
+          name="PlayerSearch"
+          component={PlayerSearchScreen}
+          options={{ title: 'Player Search' }}
+        />
+        <Stack.Screen
+          name="PlayerProfile"
+          component={PlayerProfileScreen}
+          options={{ title: 'Player Profile' }}
+        />
+        <Stack.Screen
+          name="PlayerComparison"
+          component={PlayerComparisonScreen}
+          options={{ title: 'Player Comparison' }}
+        />
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
