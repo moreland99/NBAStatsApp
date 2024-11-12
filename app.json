@@ -18,10 +18,16 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "newArchEnabled": true
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "BASKETBALL_HEAD_API_KEY": "1adf1ae1d2mshae30b968599df01p1c4589jsn1d74e4da6706",
+      "BASKETBALL_HEAD_API_HOST": "basketball-head.p.rapidapi.com"
     }
   }
 }
+

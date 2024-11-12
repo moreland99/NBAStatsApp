@@ -1,6 +1,9 @@
 //nbaApiService.js
 
-import { BASKETBALL_HEAD_API_KEY, BASKETBALL_HEAD_API_HOST } from '@env';
+import Constants from 'expo-constants';
+
+const BASKETBALL_HEAD_API_KEY = Constants.expoConfig.extra.BASKETBALL_HEAD_API_KEY;
+const BASKETBALL_HEAD_API_HOST = Constants.expoConfig.extra.BASKETBALL_HEAD_API_HOST;
 
 const BASKETBALL_HEAD_API_BASE_URL = 'https://basketball-head.p.rapidapi.com';
 
@@ -109,5 +112,33 @@ export const fetchPlayerLastFiveGames = async (playerId, season = '2024') => {
   } catch (error) {
     console.error('Error fetching last 5 games:', error);
     return [];
+  }
+};
+
+// Function to fetch team roster
+export const fetchTeamRoster = async (teamId, seasonId, playerId) => {
+  console.log(`Fetching roster for teamId: ${teamId}, seasonId: ${seasonId}`); // Debugging line
+
+  try {
+    const response = await fetch(`${BASKETBALL_HEAD_API_BASE_URL}/teams/${teamId}/roster/${seasonId}`, {
+      method: 'GET',
+      headers: {
+        'X-RapidAPI-Key': BASKETBALL_HEAD_API_KEY,
+        'X-RapidAPI-Host': BASKETBALL_HEAD_API_HOST,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error fetching team roster, status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const playerData = data.body.roster.find(player => player.playerId === playerId);
+
+    // Return the jersey number if the player is found
+    return playerData ? playerData.jerseyNumber : 'N/A';
+  } catch (error) {
+    console.error('Error fetching team roster:', error);
+    return 'N/A';
   }
 };

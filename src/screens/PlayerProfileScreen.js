@@ -1,10 +1,46 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Dimensions, Image, TouchableOpacity } from 'react-native';
-import { fetchPlayerStats, fetchPlayerLastFiveGames, fetchPlayerOverview } from '../services/nbaApiService';
+import { fetchPlayerStats, fetchPlayerLastFiveGames, fetchPlayerOverview, fetchTeamRoster } from '../services/nbaApiService';
 import { BarChart } from 'react-native-chart-kit';
 import playerData from '../../player_data.json';
 
 const screenWidth = Dimensions.get('window').width;
+
+// Mapping of team names to their abbreviations
+const teamNameToIdMap = {
+  "Atlanta Hawks": "ATL",
+  "Boston Celtics": "BOS",
+  "Brooklyn Nets": "BRK",
+  "Charlotte Hornets": "CHO",
+  "Chicago Bulls": "CHI",
+  "Cleveland Cavaliers": "CLE",
+  "Dallas Mavericks": "DAL",
+  "Denver Nuggets": "DEN",
+  "Detroit Pistons": "DET",
+  "Golden State Warriors": "GSW",
+  "Houston Rockets": "HOU",
+  "Indiana Pacers": "IND",
+  "Los Angeles Clippers": "LAC",
+  "Los Angeles Lakers": "LAL",
+  "Memphis Grizzlies": "MEM",
+  "Miami Heat": "MIA",
+  "Milwaukee Bucks": "MIL",
+  "Minnesota Timberwolves": "MIN",
+  "New Orleans Pelicans": "NOP",
+  "New York Knicks": "NYK",
+  "Oklahoma City Thunder": "OKC",
+  "Orlando Magic": "ORL",
+  "Philadelphia 76ers": "PHI",
+  "Phoenix Suns": "PHO",
+  "Portland Trail Blazers": "POR",
+  "Sacramento Kings": "SAC",
+  "San Antonio Spurs": "SAS",
+  "Toronto Raptors": "TOR",
+  "Utah Jazz": "UTA",
+  "Washington Wizards": "WAS"
+};
+
+const getTeamId = (teamName) => teamNameToIdMap[teamName] || null;
 
 const PlayerProfileScreen = ({ route }) => {
   const { playerId, playerName } = route.params;
@@ -14,6 +50,7 @@ const PlayerProfileScreen = ({ route }) => {
   const [loading, setLoading] = useState(true);
   const [selectedStat, setSelectedStat] = useState('points');
   const [imageError, setImageError] = useState(false);
+  const [jerseyNumber, setJerseyNumber] = useState('N/A');
 
   // Look up player info directly in player_data.json
   const playerInfo = playerData.find(player => player.name === playerName);
@@ -22,33 +59,73 @@ const PlayerProfileScreen = ({ route }) => {
   useEffect(() => {
     const getPlayerData = async () => {
       setLoading(true);
-
+  
       const seasonStats = await fetchPlayerStats(playerId);
       setPlayerStats(seasonStats.body || []);
-
+  
       const lastFiveGames = await fetchPlayerLastFiveGames(playerId, '2025');
       setRecentGames(lastFiveGames);
-
-       // Fetch player overview from the API
-       try {
-        const response = await fetch(`https://basketball-head.p.rapidapi.com/players/${playerId}`, {
-          method: 'GET',
-          headers: {
-            'X-RapidAPI-Key': BASKETBALL_HEAD_API_KEY,
-            'X-RapidAPI-Host': BASKETBALL_HEAD_API_HOST,
-          },
-        });
-        const data = await response.json();
-        setPlayerOverview(data.body); // Set the player overview data
+  
+      try {
+        const overviewData = await fetchPlayerOverview(playerId);
+        setPlayerOverview(overviewData);
+  
+        if (overviewData && overviewData.teams && overviewData.teams.length > 0) {
+          // Use the last entry in the teams array to get the most recent team
+          const latestTeamInfo = overviewData.teams[overviewData.teams.length - 1];
+          const [teamName, seasonYear] = latestTeamInfo.split(', ');
+  
+          const teamId = getTeamId(teamName);
+          const endYear = parseInt(seasonYear.trim(), 10);
+          const startYear = endYear - 1; // Calculate start year based on end year
+          const seasonId = `${startYear}-${endYear}`; // Proper season format YYYY-YYYY
+  
+          console.log(`Determined teamId: ${teamId}, initial seasonId: ${seasonId}`); // Debugging line
+  
+          if (teamId && seasonId) {
+            const jersey = await fetchTeamRoster(teamId, seasonId, playerId);
+            setJerseyNumber(jersey);
+          }
+        }
       } catch (error) {
         console.error('Error fetching player overview:', error);
       }
-
+  
       setLoading(false);
     };
-
+  
     getPlayerData();
   }, [playerId]);
+  
+
+  // Helper function to calculate experience
+  const calculateExperience = (draftInfo) => {
+    const currentYear = new Date().getFullYear();
+    const draftYearMatch = draftInfo.match(/(\d{4}) NBA Draft/);
+    if (draftYearMatch) {
+      const draftYear = parseInt(draftYearMatch[1], 10);
+      return currentYear - draftYear;
+    }
+    return 'N/A';
+  };
+
+  // Extract the latest team from the teams array
+const getLatestTeam = (teams) => {
+  if (!teams || teams.length === 0) return 'No Team Available';
+  
+  // Sort teams by the ending year in descending order to get the latest team
+  const sortedTeams = teams.sort((a, b) => {
+    const endYearA = parseInt(a.split(', ')[1].split('-')[1], 10) || 0;
+    const endYearB = parseInt(b.split(', ')[1].split('-')[1], 10) || 0;
+    return endYearB - endYearA;
+  });
+
+  return sortedTeams[0].split(', ')[0]; // Extract team name from the latest entry
+};
+
+const latestTeam = playerOverview ? getLatestTeam(playerOverview.teams) : 'No Team Available';
+
+  const experienceYears = playerOverview ? calculateExperience(playerOverview.draftInfo) : 'N/A';
 
   const calculateAverages = (seasonStats) => {
     if (seasonStats && seasonStats.gamesPlayed > 0) {
@@ -92,7 +169,7 @@ const PlayerProfileScreen = ({ route }) => {
           onError={() => setImageError(true)}
         />
         <Text style={styles.playerName}>{playerName}</Text>
-        <Text style={styles.teamName}>Team Name</Text>
+        <Text style={styles.teamName}>{latestTeam}</Text>
       </View>
 
       {/* Tab Section */}
@@ -104,15 +181,15 @@ const PlayerProfileScreen = ({ route }) => {
         ))}
       </View>
 
-       {/* Overview Section */}
-       <View style={styles.section}>
+      {/* Overview Section */}
+      <View style={styles.section}>
         <Text style={styles.sectionTitle}>Overview</Text>
         <View style={styles.infoBox}>
           <Text style={styles.infoText}>Position: {playerOverview?.positions || 'N/A'}</Text>
-          <Text style={styles.infoText}>Number: #{playerOverview?.number || 'N/A'}</Text>
+          <Text style={styles.infoText}>Number: #{jerseyNumber}</Text> {/* Displaying Jersey Number */}
           <Text style={styles.infoText}>Height: {playerOverview?.height || 'N/A'}</Text>
           <Text style={styles.infoText}>Weight: {playerOverview?.weight || 'N/A'}</Text>
-          <Text style={styles.infoText}>Experience: {playerOverview?.experience || 'N/A'} years</Text>
+          <Text style={styles.infoText}>Experience: {experienceYears} years</Text>
         </View>
       </View>
 
