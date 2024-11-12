@@ -1,87 +1,142 @@
+// PlayerProfileScreen.js
+
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { fetchPlayerStats } from '../services/nbaApiService';
+import { View, Text, StyleSheet, ScrollView, Dimensions, Button } from 'react-native';
+import { fetchPlayerStats, fetchPlayerLastFiveGames } from '../services/nbaApiService';
+import { BarChart } from 'react-native-chart-kit';
+
+const screenWidth = Dimensions.get('window').width;
 
 const PlayerProfileScreen = ({ route }) => {
   const { playerId, playerName } = route.params;
   const [playerStats, setPlayerStats] = useState([]);
+  const [recentGames, setRecentGames] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedStat, setSelectedStat] = useState('points');
 
   useEffect(() => {
-    const getPlayerStats = async () => {
+    const getPlayerData = async () => {
       setLoading(true);
-      const stats = await fetchPlayerStats(playerId);
-      setPlayerStats(stats.body || []); // Ensure we access `body` where data resides
+      
+      const seasonStats = await fetchPlayerStats(playerId);
+      setPlayerStats(seasonStats.body || []);
+      
+      const lastFiveGames = await fetchPlayerLastFiveGames(playerId, '2025');
+      setRecentGames(lastFiveGames);
+
       setLoading(false);
     };
 
-    getPlayerStats();
+    getPlayerData();
   }, [playerId]);
+
+  const calculateAverages = (seasonStats) => {
+    if (seasonStats && seasonStats.gamesPlayed > 0) {
+      return {
+        pointsPerGame: (seasonStats.totalPoints / seasonStats.gamesPlayed).toFixed(1),
+        assistsPerGame: (seasonStats.totalAssists / seasonStats.gamesPlayed).toFixed(1),
+        reboundsPerGame: (seasonStats.totalRebounds / seasonStats.gamesPlayed).toFixed(1),
+      };
+    }
+    return null;
+  };
+
+  const currentSeasonStats = Array.isArray(playerStats)
+    ? playerStats.find((stat) => stat.season === "2024-2025" && stat.statType === "Totals")
+    : null;
+
+  const seasonAverages = currentSeasonStats ? calculateAverages(currentSeasonStats) : null;
+
+  const chartData = {
+    labels: recentGames.map((game, index) => `G${index + 1}`),
+    datasets: [
+      {
+        data: recentGames.map((game) => {
+          if (selectedStat === 'points') return parseFloat(game.points) || 0;
+          if (selectedStat === 'assists') return parseFloat(game.assists) || 0;
+          if (selectedStat === 'rebounds') return parseFloat(game.totalRebounds) || 0;
+          return 0;
+        }),
+      },
+    ],
+  };
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.header}>{playerName}'s Career Stats</Text>
+      <Text style={styles.header}>{playerName}'s 2024-25 Season Stats</Text>
 
       {loading ? (
         <Text style={styles.loading}>Loading stats...</Text>
-      ) : playerStats.length > 0 ? (
-        playerStats.map((stat, index) => (
-          <View key={index} style={styles.statItem}>
-            <Text style={styles.statTitle}>{stat.season} - {stat.team}</Text>
-            <Text>Position: {stat.position || 'N/A'}</Text>
-            <Text>Games Played: {stat.gamesPlayed}</Text>
-            <Text>Minutes Played: {stat.minutesPlayed}</Text>
-            <Text>Total Points: {stat.totalPoints}</Text>
-            <Text>Total Rebounds: {stat.totalRebounds}</Text>
-            <Text>Total Assists: {stat.totalAssists}</Text>
-            <Text>Field Goal %: {stat.fieldGoalPercentage}</Text>
-            <Text>Three Point %: {stat.threePointFieldGoalPercentage}</Text>
-            <Text>Free Throw %: {stat.freeThrowPercentage}</Text>
-            {/* Add other stats as needed */}
+      ) : currentSeasonStats ? (
+        <>
+          <Text style={styles.chartTitle}>Game-by-Game Performance</Text>
+
+          <View style={styles.toggleContainer}>
+            <Button title="Points" onPress={() => setSelectedStat('points')} color={selectedStat === 'points' ? 'red' : 'gray'} />
+            <Button title="Assists" onPress={() => setSelectedStat('assists')} color={selectedStat === 'assists' ? 'blue' : 'gray'} />
+            <Button title="Rebounds" onPress={() => setSelectedStat('rebounds')} color={selectedStat === 'rebounds' ? 'green' : 'gray'} />
           </View>
-        ))
+
+          <View style={{ position: 'relative' }}>
+            <BarChart
+              key={`${selectedStat}-${Math.random()}`}
+              data={{
+                labels: chartData.labels,
+                datasets: chartData.datasets,
+              }}
+              width={screenWidth - 20}
+              height={220}
+              fromZero={true}
+              showValuesOnTopOfBars
+              chartConfig={{
+                backgroundColor: '#333',
+                backgroundGradientFrom: '#555',
+                backgroundGradientTo: '#777',
+                decimalPlaces: 0,
+                color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+                labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+                style: { borderRadius: 16 },
+              }}
+              style={styles.chart}
+            />
+          </View>
+
+          <View style={styles.statsContainer}>
+            <Text style={styles.sectionHeader}>Season Averages</Text>
+            <Text>Points per Game: {seasonAverages?.pointsPerGame || 'N/A'}</Text>
+            <Text>Assists per Game: {seasonAverages?.assistsPerGame || 'N/A'}</Text>
+            <Text>Rebounds per Game: {seasonAverages?.reboundsPerGame || 'N/A'}</Text>
+          </View>
+
+          <View style={styles.statsContainer}>
+            <Text style={styles.sectionHeader}>Season Totals</Text>
+            <Text>Total Points: {currentSeasonStats.totalPoints || 'N/A'}</Text>
+            <Text>Total Assists: {currentSeasonStats.totalAssists || 'N/A'}</Text>
+            <Text>Total Rebounds: {currentSeasonStats.totalRebounds || 'N/A'}</Text>
+            <Text>Games Played: {currentSeasonStats.gamesPlayed || 'N/A'}</Text>
+          </View>
+        </>
       ) : (
-        <Text style={styles.noStats}>No career stats available.</Text>
+        <Text>No stats available for the current season.</Text>
       )}
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
+  container: { flex: 1, padding: 16 },
+  header: { fontSize: 24, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
+  loading: { fontSize: 16, color: 'gray', textAlign: 'center' },
+  chartTitle: { fontSize: 18, fontWeight: 'bold', marginVertical: 10, textAlign: 'center' },
+  chart: { marginVertical: 8, borderRadius: 16 },
+  toggleContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginVertical: 10,
   },
-  header: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  loading: {
-    fontSize: 16,
-    color: 'gray',
-    textAlign: 'center',
-  },
-  statItem: {
-    marginBottom: 15,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 5,
-    backgroundColor: '#f9f9f9',
-  },
-  statTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 5,
-  },
-  noStats: {
-    fontSize: 16,
-    color: 'red',
-    textAlign: 'center',
-    marginTop: 20,
-  },
+  statsContainer: { marginBottom: 20, padding: 10, borderWidth: 1, borderColor: '#ddd', borderRadius: 5, backgroundColor: '#f9f9f9' },
+  sectionHeader: { fontSize: 18, fontWeight: 'bold', marginBottom: 10 },
 });
 
 export default PlayerProfileScreen;
+

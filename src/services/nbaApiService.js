@@ -1,4 +1,4 @@
-// src/services/nbaApiService.js
+//nbaApiService.js
 
 import { BASKETBALL_HEAD_API_KEY, BASKETBALL_HEAD_API_HOST } from '@env';
 
@@ -8,27 +8,20 @@ const BASKETBALL_HEAD_API_BASE_URL = 'https://basketball-head.p.rapidapi.com';
 export const searchPlayers = async (playerName) => {
   try {
     const url = `${BASKETBALL_HEAD_API_BASE_URL}/players/searchv2`;
-    console.log(`Request URL: ${url}`);
-
     const response = await fetch(url, {
-      method: 'POST',  // Use POST instead of GET
+      method: 'POST',
       headers: {
-        'Content-Type': 'application/json',  // Set Content-Type to application/json
+        'Content-Type': 'application/json',
         'X-RapidAPI-Key': BASKETBALL_HEAD_API_KEY,
         'X-RapidAPI-Host': BASKETBALL_HEAD_API_HOST
       },
-      body: JSON.stringify({ query: playerName })  // Send player name in the body as JSON
+      body: JSON.stringify({ query: playerName })
     });
-
-    console.log('Response Status:', response.status); // Log status for debugging
 
     if (!response.ok) throw new Error(`Failed to fetch players, status: ${response.status}`);
 
     const data = await response.json();
-    console.log('Player Search API Response:', data);
-
-    // Adjust to access `data.body` if that is where the array of players is located
-    return data.body || [];  // Using `data.body` based on observed structure
+    return data.body || [];
   } catch (error) {
     console.error('Error searching players:', error);
     return [];
@@ -38,7 +31,7 @@ export const searchPlayers = async (playerName) => {
 // Function to fetch player statistics for the current season
 export const fetchPlayerStats = async (playerId) => {
   try {
-    const response = await fetch(`https://basketball-head.p.rapidapi.com/players/${playerId}/stats/Totals?seasonType=Regular`, {
+    const response = await fetch(`${BASKETBALL_HEAD_API_BASE_URL}/players/${playerId}/stats/Totals?seasonType=Regular`, {
       method: 'GET',
       headers: {
         'X-RapidAPI-Key': BASKETBALL_HEAD_API_KEY,
@@ -51,7 +44,8 @@ export const fetchPlayerStats = async (playerId) => {
     }
 
     const data = await response.json();
-    console.log('Fetched Player Stats:', data);
+    console.log('Fetched Player Stats:', JSON.stringify(data, null, 2)); // Log the entire response data
+
     return data;
   } catch (error) {
     console.error('Error fetching player stats:', error);
@@ -59,4 +53,37 @@ export const fetchPlayerStats = async (playerId) => {
   }
 };
 
+export const fetchPlayerLastFiveGames = async (playerId, season = '2024') => {
+  try {
+    const response = await fetch(`${BASKETBALL_HEAD_API_BASE_URL}/players/${playerId}/games/${season}`, {
+      method: 'POST',
+      headers: {
+        'X-RapidAPI-Key': BASKETBALL_HEAD_API_KEY,
+        'X-RapidAPI-Host': BASKETBALL_HEAD_API_HOST,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ pageSize: 100 }),
+    });
 
+    if (!response.ok) {
+      throw new Error(`Error fetching last 5 games, status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const games = data.body || [];
+    console.log('Fetched Player Game Logs:', JSON.stringify(games, null, 2));
+
+    // Sort games by date ascending and slice the last 5
+    const lastFiveGames = games
+      .filter(game => game.statType === 'Game') // Ensure it's individual games
+      .sort((a, b) => new Date(a.date) - new Date(b.date)) // Sort in ascending order by date
+      .slice(-5); // Take only the last 5 games
+
+    console.log('Filtered Last 5 Games:', JSON.stringify(lastFiveGames, null, 2)); // Log to verify
+
+    return lastFiveGames;
+  } catch (error) {
+    console.error('Error fetching last 5 games:', error);
+    return [];
+  }
+};
