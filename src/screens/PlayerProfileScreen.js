@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Dimensions, Image, TouchableOpacity } from 'react-native';
-import { fetchPlayerStats, fetchPlayerLastFiveGames } from '../services/nbaApiService';
+import { fetchPlayerStats, fetchPlayerLastFiveGames, fetchPlayerOverview } from '../services/nbaApiService';
 import { BarChart } from 'react-native-chart-kit';
 import playerData from '../../player_data.json';
 
@@ -8,6 +8,7 @@ const screenWidth = Dimensions.get('window').width;
 
 const PlayerProfileScreen = ({ route }) => {
   const { playerId, playerName } = route.params;
+  const [playerOverview, setPlayerOverview] = useState(null);
   const [playerStats, setPlayerStats] = useState([]);
   const [recentGames, setRecentGames] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -27,6 +28,21 @@ const PlayerProfileScreen = ({ route }) => {
 
       const lastFiveGames = await fetchPlayerLastFiveGames(playerId, '2025');
       setRecentGames(lastFiveGames);
+
+       // Fetch player overview from the API
+       try {
+        const response = await fetch(`https://basketball-head.p.rapidapi.com/players/${playerId}`, {
+          method: 'GET',
+          headers: {
+            'X-RapidAPI-Key': BASKETBALL_HEAD_API_KEY,
+            'X-RapidAPI-Host': BASKETBALL_HEAD_API_HOST,
+          },
+        });
+        const data = await response.json();
+        setPlayerOverview(data.body); // Set the player overview data
+      } catch (error) {
+        console.error('Error fetching player overview:', error);
+      }
 
       setLoading(false);
     };
@@ -88,15 +104,15 @@ const PlayerProfileScreen = ({ route }) => {
         ))}
       </View>
 
-      {/* Overview Section */}
-      <View style={styles.section}>
+       {/* Overview Section */}
+       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Overview</Text>
         <View style={styles.infoBox}>
-          <Text style={styles.infoText}>Position: C</Text>
-          <Text style={styles.infoText}>Number: #11</Text>
-          <Text style={styles.infoText}>Height: 6'11"</Text>
-          <Text style={styles.infoText}>Weight: 240 lbs</Text>
-          <Text style={styles.infoText}>Experience: 9 years</Text>
+          <Text style={styles.infoText}>Position: {playerOverview?.positions || 'N/A'}</Text>
+          <Text style={styles.infoText}>Number: #{playerOverview?.number || 'N/A'}</Text>
+          <Text style={styles.infoText}>Height: {playerOverview?.height || 'N/A'}</Text>
+          <Text style={styles.infoText}>Weight: {playerOverview?.weight || 'N/A'}</Text>
+          <Text style={styles.infoText}>Experience: {playerOverview?.experience || 'N/A'} years</Text>
         </View>
       </View>
 

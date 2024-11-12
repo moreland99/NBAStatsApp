@@ -28,6 +28,30 @@ export const searchPlayers = async (playerName) => {
   }
 };
 
+// Function to fetch player metadata (overview) - New Function
+export const fetchPlayerOverview = async (playerId) => {
+  try {
+    const response = await fetch(`${BASKETBALL_HEAD_API_BASE_URL}/players/${playerId}`, {
+      method: 'GET',
+      headers: {
+        'X-RapidAPI-Key': BASKETBALL_HEAD_API_KEY,
+        'X-RapidAPI-Host': BASKETBALL_HEAD_API_HOST,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error fetching player overview, status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('Fetched Player Overview:', JSON.stringify(data, null, 2)); // Log to verify
+    return data.body || null; // Assuming data.body contains the player metadata
+  } catch (error) {
+    console.error('Error fetching player overview:', error);
+    return null;
+  }
+};
+
 // Function to fetch player statistics for the current season
 export const fetchPlayerStats = async (playerId) => {
   try {
