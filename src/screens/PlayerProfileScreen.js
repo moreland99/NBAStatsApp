@@ -87,7 +87,7 @@ const PlayerProfileScreen = ({ route }) => {
         <Text style={styles.loading}>Loading stats...</Text>
       ) : currentSeasonStats ? (
         <>
-          <Text style={styles.chartTitle}>Game-by-Game Performance</Text>
+          <Text style={styles.chartTitle}>Last 5 Games Stats</Text>
 
           <View style={styles.toggleContainer}>
             <Button title="Points" onPress={() => setSelectedStat('points')} color={selectedStat === 'points' ? 'red' : 'gray'} />
