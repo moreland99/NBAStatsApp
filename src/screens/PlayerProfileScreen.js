@@ -1,9 +1,8 @@
-// PlayerProfileScreen.js
-
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Dimensions, Button } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Dimensions, Button, Image } from 'react-native';
 import { fetchPlayerStats, fetchPlayerLastFiveGames } from '../services/nbaApiService';
 import { BarChart } from 'react-native-chart-kit';
+import playerData from '../../player_data.json';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -13,14 +12,19 @@ const PlayerProfileScreen = ({ route }) => {
   const [recentGames, setRecentGames] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedStat, setSelectedStat] = useState('points');
+  const [imageError, setImageError] = useState(false);
+
+  // Look up player info directly in player_data.json
+  const playerInfo = playerData.find(player => player.name === playerName);
+  const imageUrl = playerInfo ? playerInfo.image_url : 'https://via.placeholder.com/200?text=No+Image';
 
   useEffect(() => {
     const getPlayerData = async () => {
       setLoading(true);
-      
+
       const seasonStats = await fetchPlayerStats(playerId);
       setPlayerStats(seasonStats.body || []);
-      
+
       const lastFiveGames = await fetchPlayerLastFiveGames(playerId, '2025');
       setRecentGames(lastFiveGames);
 
@@ -63,6 +67,20 @@ const PlayerProfileScreen = ({ route }) => {
 
   return (
     <ScrollView style={styles.container}>
+      {/* Player Image Display */}
+      <Image
+  source={{
+    uri: imageError ? 'https://via.placeholder.com/200?text=No+Image' : imageUrl,
+  }}
+  style={styles.playerImage}
+  resizeMode="contain" // Adjust to "contain" to fit the entire image without cropping
+  onError={() => {
+    console.log(`Failed to load image for ${playerName} with ID: ${playerId}`);
+    setImageError(true);
+  }}
+/>
+
+      
       <Text style={styles.header}>{playerName}'s 2024-25 Season Stats</Text>
 
       {loading ? (
@@ -125,6 +143,13 @@ const PlayerProfileScreen = ({ route }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
+  playerImage: {
+    width: screenWidth - 20,
+    height: 200,
+    resizeMode: 'cover',
+    borderRadius: 10,
+    marginBottom: 20,
+  },
   header: { fontSize: 24, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
   loading: { fontSize: 16, color: 'gray', textAlign: 'center' },
   chartTitle: { fontSize: 18, fontWeight: 'bold', marginVertical: 10, textAlign: 'center' },
@@ -139,4 +164,3 @@ const styles = StyleSheet.create({
 });
 
 export default PlayerProfileScreen;
-
