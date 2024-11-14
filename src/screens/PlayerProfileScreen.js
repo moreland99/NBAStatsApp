@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Dimensions, Image, TouchableOpacity } from 'react-native';
-import { fetchPlayerStats, fetchPlayerLastFiveGames, fetchPlayerOverview, fetchTeamRoster } from '../services/nbaApiService';
+import { fetchPlayerStats, fetchPlayerLastFiveGames, fetchPlayerOverview, fetchTeamRoster, fetchPlayerSeasonStats } from '../services/nbaApiService';
 import { BarChart } from 'react-native-svg-charts';
 import { G, Rect, Text as SVGText, Line } from 'react-native-svg';
 import playerData from '../../player_data.json';
@@ -116,6 +116,7 @@ const PlayerProfileScreen = ({ route }) => {
   const [playerOverview, setPlayerOverview] = useState(null);
   const [playerStats, setPlayerStats] = useState([]);
   const [recentGames, setRecentGames] = useState([]);
+  const [seasonStats, setSeasonStats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedStat, setSelectedStat] = useState('points');
   const [imageError, setImageError] = useState(false);
@@ -129,6 +130,9 @@ const PlayerProfileScreen = ({ route }) => {
   useEffect(() => {
     const getPlayerData = async () => {
       setLoading(true);
+
+      const seasonStatsData = await fetchPlayerSeasonStats(playerId);
+      setSeasonStats(seasonStatsData);
   
       const seasonStats = await fetchPlayerStats(playerId);
       setPlayerStats(seasonStats.body || []);
@@ -342,10 +346,33 @@ const PlayerProfileScreen = ({ route }) => {
       )}
 
       {activeTab === "Stats" && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Stats</Text>
+  <View style={styles.section}>
+    <Text style={styles.sectionTitle}>Season Stats</Text>
+    {playerStats.length > 0 ? (
+      playerStats.map((season, index) => (
+        <View key={index} style={styles.seasonStatsContainer}>
+          <Text style={styles.seasonText}>Season: {season.season}</Text>
+          <View style={styles.statRow}>
+            <Text style={styles.statLabel}>Points Per Game:</Text>
+            <Text style={styles.statValue}>{(season.totalPoints / season.gamesPlayed).toFixed(1) || 'N/A'}</Text>
+          </View>
+          <View style={styles.statRow}>
+            <Text style={styles.statLabel}>Assists Per Game:</Text>
+            <Text style={styles.statValue}>{(season.totalAssists / season.gamesPlayed).toFixed(1) || 'N/A'}</Text>
+          </View>
+          <View style={styles.statRow}>
+            <Text style={styles.statLabel}>Rebounds Per Game:</Text>
+            <Text style={styles.statValue}>{(season.totalRebounds / season.gamesPlayed).toFixed(1) || 'N/A'}</Text>
+          </View>
         </View>
-      )}
+      ))
+    ) : (
+      <Text>No Stats Available</Text>
+    )}
+  </View>
+)}
+
+
     </ScrollView>
   );
 };
@@ -443,6 +470,35 @@ const styles = StyleSheet.create({
   chart: {
     borderRadius: 16,
   },
+    // Additional styles for the "Stats" tab
+    seasonStatsContainer: {
+      backgroundColor: '#F9F9F9',
+      padding: 10,
+      borderRadius: 8,
+      marginBottom: 10,
+      borderColor: '#E0E0E0',
+      borderWidth: 1,
+    },
+    seasonText: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: '#333',
+      marginBottom: 8,
+    },
+    statRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      paddingVertical: 4,
+    },
+    statLabel: {
+      fontSize: 16,
+      color: '#666',
+    },
+    statValue: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: '#333',
+    },
 });
 
 export default PlayerProfileScreen;

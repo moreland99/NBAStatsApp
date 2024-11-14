@@ -142,3 +142,62 @@ export const fetchTeamRoster = async (teamId, seasonId, playerId) => {
     return 'N/A';
   }
 };
+
+// Function to fetch all seasons in which a player has stats
+export const fetchPlayerSeasons = async (playerId) => {
+  try {
+    const response = await fetch(
+      `${BASKETBALL_HEAD_API_BASE_URL}/players/${playerId}/seasons`, // Replace with correct endpoint if needed
+      {
+        method: 'GET',
+        headers: {
+          'X-RapidAPI-Key': BASKETBALL_HEAD_API_KEY,
+          'X-RapidAPI-Host': BASKETBALL_HEAD_API_HOST,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Error fetching player seasons, status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('Fetched Player Seasons:', JSON.stringify(data, null, 2)); // Log to verify structure
+
+    return data.body || []; // Assuming data.body contains a list of seasons
+  } catch (error) {
+    console.error('Error fetching player seasons:', error);
+    return [];
+  }
+};
+
+
+// Function to fetch all season statistics for a player
+export const fetchPlayerSeasonStats = async (playerId, seasonType = 'Regular') => {
+  const url = `${BASKETBALL_HEAD_API_BASE_URL}/players/${playerId}/stats?seasonType=${seasonType}`;
+  
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'X-RapidAPI-Key': BASKETBALL_HEAD_API_KEY,
+        'X-RapidAPI-Host': BASKETBALL_HEAD_API_HOST,
+      },
+    });
+
+    if (!response.ok) {
+      // Check if the error is specifically a 404 Not Found
+      if (response.status === 404) {
+        console.warn(`Season stats for player ${playerId} not found (404).`);
+        return null; // Return null if stats are not found
+      }
+      throw new Error(`Error fetching season stats, status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.body || [];
+  } catch (error) {
+    console.error('Error fetching player season stats:', error);
+    return null; // Return null on any error to handle it gracefully in the UI
+  }
+};
