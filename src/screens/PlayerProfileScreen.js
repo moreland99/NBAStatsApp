@@ -10,36 +10,61 @@ const screenWidth = Dimensions.get('window').width;
 
 // Team colors mapping
 const teamColors = {
-  "Atlanta Hawks": "#E03A3E",
-  "Boston Celtics": "#007A33",
-  "Brooklyn Nets": "#000000",
-  "Charlotte Hornets": "#1D1160",
-  "Chicago Bulls": "#CE1141",
-  "Cleveland Cavaliers": "#860038",
-  "Dallas Mavericks": "#00538C",
-  "Denver Nuggets": "#0E2240",
-  "Detroit Pistons": "#C8102E",
-  "Golden State Warriors": "#1D428A",
-  "Houston Rockets": "#CE1141",
-  "Indiana Pacers": "#002D62",
-  "Los Angeles Clippers": "#C8102E",
-  "Los Angeles Lakers": "#552583",
-  "Memphis Grizzlies": "#5D76A9",
-  "Miami Heat": "#98002E",
-  "Milwaukee Bucks": "#00471B",
-  "Minnesota Timberwolves": "#0C2340",
-  "New Orleans Pelicans": "#0C2340",
-  "New York Knicks": "#006BB6",
-  "Oklahoma City Thunder": "#007AC1",
-  "Orlando Magic": "#0077C0",
-  "Philadelphia 76ers": "#006BB6",
-  "Phoenix Suns": "#1D1160",
-  "Portland Trail Blazers": "#E03A3E",
-  "Sacramento Kings": "#5A2D81",
-  "San Antonio Spurs": "#C4CED4",
-  "Toronto Raptors": "#CE1141",
-  "Utah Jazz": "#002B5C",
-  "Washington Wizards": "#002B5C"
+  "Atlanta Hawks": "#E03A3E", // Red
+  "Boston Celtics": "#007A33", // Green
+  "Brooklyn Nets": "#000000", // Black
+  "Charlotte Hornets": "#1D1160", // Purple
+  "Chicago Bulls": "#CE1141", // Red
+  "Cleveland Cavaliers": "#6F263D", // Wine
+  "Dallas Mavericks": "#00538C", // Blue
+  "Denver Nuggets": "#0E2240", // Midnight Blue
+  "Detroit Pistons": "#C8102E", // Red
+  "Golden State Warriors": "#1D428A", // Royal Blue
+  "Houston Rockets": "#CE1141", // Red
+  "Indiana Pacers": "#002D62", // Blue
+  "Los Angeles Clippers": "#C8102E", // Red
+  "Los Angeles Lakers": "#552583", // Purple
+  "Memphis Grizzlies": "#12173F", // Navy
+  "Miami Heat": "#98002E", // Red
+  "Milwaukee Bucks": "#00471B", // Green
+  "Minnesota Timberwolves": "#0C2340", // Navy
+  "New Orleans Pelicans": "#0C2340", // Navy
+  "New York Knicks": "#006BB6", // Blue
+  "Oklahoma City Thunder": "#007AC1", // Blue
+  "Orlando Magic": "#0077C0", // Blue
+  "Philadelphia 76ers": "#006BB6", // Blue
+  "Phoenix Suns": "#1D1160", // Purple
+  "Portland Trail Blazers": "#E03A3E", // Red
+  "Sacramento Kings": "#5A2D81", // Purple
+  "San Antonio Spurs": "#A5ACAF", // Darker Silver
+  "Toronto Raptors": "#CE1141", // Red
+  "Utah Jazz": "#002B5C", // Navy
+  "Washington Wizards": "#002B5C" // Navy
+};
+
+// Mapping of full position names to abbreviations
+const positionAbbreviations = {
+  "Point Guard": "PG",
+  "Shooting Guard": "SG",
+  "Small Forward": "SF",
+  "Power Forward": "PF",
+  "Center": "C"
+};
+
+// Function to format positions for display
+const formatPositions = (positions) => {
+  if (!positions) return 'N/A';
+  
+  // Split positions by " and " and map each to its abbreviation
+  return positions
+    .split(" and ")
+    .map(pos => getAbbreviatedPosition(pos.trim()))
+    .join(", ");
+};
+
+// Function to get abbreviated position
+const getAbbreviatedPosition = (position) => {
+  return positionAbbreviations[position] || position; // Default to full position if no abbreviation is found
 };
 
 // Mapping of team names to their abbreviations
@@ -272,7 +297,9 @@ const PlayerProfileScreen = ({ route }) => {
             {/* Overview Content */}
             <Text style={styles.sectionTitle}>Overview</Text>
             <View style={styles.infoBox}>
-              <Text style={styles.infoText}>Position: {playerOverview?.positions || 'N/A'}</Text>
+            <Text style={styles.infoText}>
+              Position: {playerOverview?.positions ? formatPositions(playerOverview.positions) : 'N/A'}
+            </Text>
               <Text style={styles.infoText}>Number: #{jerseyNumber}</Text>
               <Text style={styles.infoText}>Height: {playerOverview?.height || 'N/A'}</Text>
               <Text style={styles.infoText}>Weight: {playerOverview?.weight || 'N/A'}</Text>
@@ -403,12 +430,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#ddd',
   },
-  tabContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    backgroundColor: '#333',
-    paddingVertical: 10,
-  },
+tabContainer: {
+  flexDirection: 'row',
+  justifyContent: 'space-around',
+  backgroundColor: '#333',
+  paddingVertical: 12,
+  borderRadius: 8,            // Rounds the corners
+  marginHorizontal: 10,       // Adds side margins for spacing from edges
+  marginTop: 15,              // Adds some space above the tabs
+  shadowColor: '#000',        // Shadow color for depth
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.3,
+  shadowRadius: 4,
+  elevation: 4,               // Elevation for Android shadow
+},
+
   tabButton: {
     paddingHorizontal: 10,
   },
