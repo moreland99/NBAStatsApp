@@ -430,26 +430,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#ddd',
   },
-tabContainer: {
-  flexDirection: 'row',
-  justifyContent: 'space-around',
-  backgroundColor: '#333',
-  paddingVertical: 12,
-  borderRadius: 8,            // Rounds the corners
-  marginHorizontal: 10,       // Adds side margins for spacing from edges
-  marginTop: 15,              // Adds some space above the tabs
-  shadowColor: '#000',        // Shadow color for depth
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.3,
-  shadowRadius: 4,
-  elevation: 4,               // Elevation for Android shadow
-},
-
+  tabContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    backgroundColor: '#fff',
+    marginTop: 5,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
   tabButton: {
     paddingHorizontal: 10,
   },
   tabText: {
-    color: '#fff',
+    color: '#000',
     fontSize: 16,
     fontWeight: 'bold',
   },
@@ -497,7 +490,7 @@ tabContainer: {
     paddingVertical: 5,
     paddingHorizontal: 15,
     borderRadius: 15,
-    backgroundColor: active ? '#4B2A6A' : '#ddd',
+    backgroundColor: active ? '#1a1a1a' : '#ddd',
   }),
   toggleButtonText: {
     color: '#fff',
